@@ -41,3 +41,8 @@ These embeddings were trained using a modified skip-gram architecture on 100B wo
 - lexsub_xml.py - an XML parser that reads lexsub_trial.xml into Python objects.
 - lexsub_main.py - this is the main scaffolding code you will complete
 - score.pl - the scoring script provided for the SemEval 2007 lexical substitution task.
+
+
+### Part 2
+- python lexsub_main.py lexsub_trial.xml  > smurf.predict
+- perl score.pl smurf.predict gold.trial

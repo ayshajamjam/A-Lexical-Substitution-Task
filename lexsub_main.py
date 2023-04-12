@@ -16,6 +16,8 @@ import transformers
 
 from typing import List
 
+from collections import defaultdict
+
 def tokenize(s): 
     """
     a naive tokenizer that splits on punctuation and whitespaces.  
@@ -33,11 +35,10 @@ def get_candidates(lemma, pos) -> List[str]:
     for s in synsets:
         for l in s.lemmas():
             # l = Lemma('boring.s.01.dull') 
-            word = str(l.name()).replace('_', ' ')
+            word = str(l.name()).replace('_', ' ').lower()
             if(str(word) != str(lemma)):
                 words.add(word)
-    print(words)
-    return [] 
+    return words
 
 def smurf_predictor(context : Context) -> str:
     """
@@ -46,7 +47,29 @@ def smurf_predictor(context : Context) -> str:
     return 'smurf'
 
 def wn_frequency_predictor(context : Context) -> str:
-    return None # replace for part 2
+
+    # Get lemma, POS from context
+    lemma = context.lemma
+    pos = context.pos
+    # print(lemma)
+    # print(pos)
+
+    # Get candidates
+    synsets = wn.synsets(lemma, pos)    # Get all synsets lemma appears in
+    wordCounts = defaultdict(int)       # dict keeps track of word count accross synsets
+    # Get lemmas that appear in these synsets
+    for s in synsets:
+        for l in s.lemmas():
+            # l = Lemma('boring.s.01.dull') 
+            word = str(l.name()).replace('_', ' ').lower()
+            # print(word, l.count())
+            if(str(word) != str(lemma)):
+                wordCounts[word] += l.count()
+
+    # print(wordCounts)
+    # print(max(wordCounts, key=wordCounts.get))
+
+    return max(wordCounts, key=wordCounts.get) # select highest count as substitute
 
 def wn_simple_lesk_predictor(context : Context) -> str:
     return None #replace for part 3        
@@ -79,9 +102,10 @@ if __name__=="__main__":
     #W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
     #predictor = Word2VecSubst(W2VMODEL_FILENAME)
 
-    get_candidates('spin', 'v')
+    # get_candidates('spin', 'v')
 
-    # for context in read_lexsub_xml(sys.argv[1]):
-    #     #print(context)  # useful for debugging
-    #     prediction = smurf_predictor(context) 
-    #     print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
+    for context in read_lexsub_xml(sys.argv[1]):
+        # print(context)  # useful for debugging
+        prediction = wn_frequency_predictor(context)
+        # prediction = smurf_predictor(context)
+        print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
