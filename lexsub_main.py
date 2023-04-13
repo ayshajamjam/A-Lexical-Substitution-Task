@@ -18,7 +18,11 @@ from typing import List
 
 from collections import defaultdict
 
-def tokenize(s): 
+import re
+
+import string
+
+def tokenize(s):
     """
     a naive tokenizer that splits on punctuation and whitespaces.  
     """
@@ -72,6 +76,74 @@ def wn_frequency_predictor(context : Context) -> str:
     return max(wordCounts, key=wordCounts.get) # select highest count as substitute
 
 def wn_simple_lesk_predictor(context : Context) -> str:
+    # Get lemma, POS from context
+    lemma = context.lemma
+    pos = context.pos
+    sentence = set(context.left_context + context.right_context)
+
+    print("Sentence: ", sentence)
+
+    # Remove stop words in context sentence
+    stop_words = set(stopwords.words('english'))
+    sentence_non_stop_words = set()
+    punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
+
+    for word in sentence:
+        if word not in stop_words and word not in punc:
+            sentence_non_stop_words.add(word.lower())
+    
+    print("Stop words removed: ", sentence_non_stop_words)
+
+    # Iterate over all posible synsets target word appears in
+    # Get candidates
+    synsets = wn.synsets(lemma, pos)    # Get all synsets lemma appears in
+    synsets_words = set()
+
+    for s in synsets:
+        # Synset Definition
+        # print(s)
+        # print(s.definition())
+        definition = tokenize(s.definition())
+        # print(definition)
+
+        # Check for stop-words and punc
+        for word in definition:
+            if word not in stop_words and word not in punc:
+                synsets_words.add(word)
+
+        # Examples for synset
+        for ex in s.examples():
+            # print(ex)
+            example = tokenize(ex)
+            # Check for stop-words and punc
+            for word in example:
+                if word not in stop_words and word not in punc:
+                    synsets_words.add(word)
+
+        # Find all hypernyms
+        hypernyms = set()
+        # print(s.hypernyms())
+        for h in s.hypernyms():
+            # Definition of each hypernym
+            # print(h.definition())
+            hyper_def = tokenize(h.definition())
+            # Check for stop-words and punc
+            for word in hyper_def:
+                if word not in stop_words and word not in punc:
+                    synsets_words.add(word)
+            
+            # Examples for each hypernym
+            # print(h.examples())
+            for ex in h.examples():
+                example = tokenize(ex)
+                # Check for stop-words and punc
+                for word in example:
+                    if word not in stop_words and word not in punc:
+                        synsets_words.add(word)
+        # print('\n')
+
+    print("All possible words: ", synsets_words)
+
     return None #replace for part 3        
    
 
@@ -105,7 +177,9 @@ if __name__=="__main__":
     # get_candidates('spin', 'v')
 
     for context in read_lexsub_xml(sys.argv[1]):
-        # print(context)  # useful for debugging
-        prediction = wn_frequency_predictor(context)
+        print('\n')
+        print("Context")
+        print(context)  # useful for debugging
+        prediction = wn_simple_lesk_predictor(context)
         # prediction = smurf_predictor(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
