@@ -81,7 +81,7 @@ def wn_simple_lesk_predictor(context : Context) -> str:
     pos = context.pos
     sentence = set(context.left_context + context.right_context)
 
-    print("Sentence: ", sentence)
+    # print("Sentence: ", sentence)
 
     # Remove stop words in context sentence
     stop_words = set(stopwords.words('english'))
@@ -92,33 +92,27 @@ def wn_simple_lesk_predictor(context : Context) -> str:
         if word not in stop_words and word not in punc:
             sentence_non_stop_words.add(word.lower())
     
-    print("Stop words removed: ", sentence_non_stop_words)
+    # print("Stop words removed: ", sentence_non_stop_words)
 
     # Iterate over all posible synsets target word appears in
     # Get candidates
     synsets = wn.synsets(lemma, pos)    # Get all synsets lemma appears in
-    synsets_words = set()
+    synsets_ovelap_count = defaultdict(int)
 
     for s in synsets:
+        synsets_words = set()
         # Synset Definition
         # print(s)
         # print(s.definition())
         definition = tokenize(s.definition())
         # print(definition)
-
-        # Check for stop-words and punc
-        for word in definition:
-            if word not in stop_words and word not in punc:
-                synsets_words.add(word)
+        synsets_words.update(definition)
 
         # Examples for synset
         for ex in s.examples():
             # print(ex)
             example = tokenize(ex)
-            # Check for stop-words and punc
-            for word in example:
-                if word not in stop_words and word not in punc:
-                    synsets_words.add(word)
+            synsets_words.update(example)
 
         # Find all hypernyms
         hypernyms = set()
@@ -127,24 +121,84 @@ def wn_simple_lesk_predictor(context : Context) -> str:
             # Definition of each hypernym
             # print(h.definition())
             hyper_def = tokenize(h.definition())
-            # Check for stop-words and punc
-            for word in hyper_def:
-                if word not in stop_words and word not in punc:
-                    synsets_words.add(word)
+            synsets_words.update(hyper_def)
             
             # Examples for each hypernym
             # print(h.examples())
             for ex in h.examples():
                 example = tokenize(ex)
-                # Check for stop-words and punc
-                for word in example:
-                    if word not in stop_words and word not in punc:
-                        synsets_words.add(word)
+                synsets_words.update(example)
         # print('\n')
 
-    print("All possible words: ", synsets_words)
+        synsets_non_stop_words = set()
 
-    return None #replace for part 3        
+        # Remove all stop words and punc
+        for word in synsets_words:
+            if word not in stop_words and word not in punc:
+                synsets_non_stop_words.add(word)
+
+        # print("All possible words: ", synsets_non_stop_words)
+
+        # find overlap between synsets_non_stop_words and sentence_non_stop_words
+        overlap = synsets_non_stop_words.intersection(sentence_non_stop_words)
+        # print(overlap)
+        synsets_ovelap_count[s] += len(overlap)
+
+    max_synset = max(synsets_ovelap_count, key=synsets_ovelap_count.get)
+    max_synset_count = max(synsets_ovelap_count.values())
+    # print(synsets_ovelap_count)
+    # print("Maximum synset (temp)")
+    # print(max_synset, ' ---> ', max_synset_count)
+    # print(max_synset.lemmas())
+
+    # No overlap between context and all synsets
+    if(max_synset_count == 0):
+        # print("OVERLAP")
+        selected_word = wn_frequency_predictor(context)
+        # print(selected_word)
+        return selected_word
+    # Some overlap but there is a tie
+    list_synsets_with_same_count = [k for k,v in synsets_ovelap_count.items() if int(v) == max_synset_count]
+    if(len(list_synsets_with_same_count) > 0):
+        # print("TIEEEE")
+        # print(list_synsets_with_same_count)
+        
+        wordCounts = defaultdict(int)       # dict keeps track of word count accross synsets
+        # Get lemmas that appear in these synsets
+        for s in list_synsets_with_same_count:
+            for l in s.lemmas():
+                # l = Lemma('boring.s.01.dull') 
+                word = str(l.name()).replace('_', ' ').lower()
+                # print(word, l.count())
+                if(str(word) != str(lemma)):
+                    wordCounts[word] += l.count()
+
+        # print(wordCounts)
+        if(len(wordCounts) == 0):
+            selected_word = wn_frequency_predictor(context)
+            # print(selected_word)
+            return selected_word
+        else:
+            selected_word = max(wordCounts, key=wordCounts.get)
+            # print(selected_word)
+            return selected_word
+        
+    # Clear winner
+    wordCounts = defaultdict(int)
+    for l in max_synset.lemmas():
+        # l = Lemma('boring.s.01.dull') 
+        word = str(l.name()).replace('_', ' ').lower()
+        # print(word, l.count())
+        if(str(word) != str(lemma)):
+            wordCounts[word] += l.count()
+    
+    if(len(wordCounts) > 0):
+        selected_word = max(wordCounts, key=wordCounts.get)
+        return selected_word
+    else:
+        return #TODO - return second best synset
+    # print(selected_word)
+    return selected_word #replace for part 3        
    
 
 class Word2VecSubst(object):
@@ -177,9 +231,9 @@ if __name__=="__main__":
     # get_candidates('spin', 'v')
 
     for context in read_lexsub_xml(sys.argv[1]):
-        print('\n')
-        print("Context")
-        print(context)  # useful for debugging
+        # print('\n')
+        # print("Context")
+        # print(context)  # useful for debugging
         prediction = wn_simple_lesk_predictor(context)
         # prediction = smurf_predictor(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
