@@ -167,71 +167,38 @@ def wn_simple_lesk_predictor(context : Context) -> str:
         print('NONE')
         return None
 
-    # max_synset = max(synsets_ovelap_count, key=synsets_ovelap_count.get)
-    # max_synset_count = max(synsets_ovelap_count.values())
-    # print(max_synset, ' ---> ', max_synset_count)
-    # print(synsets_ovelap_count)
-    # # print(max_synset.lemmas())
-
-    # # Determine synset with the highest score
-    # weighted_score = 0
-
-    # # No overlap between context and all synsets
-    # if(max_synset_count == 0):
-    #     # print("OVERLAP")
-    #     selected_word = wn_frequency_predictor(context)
-    #     # print(selected_word)
-    #     return selected_word
-    # # Some overlap but there is a tie
-    # list_synsets_with_same_count = [k for k,v in synsets_ovelap_count.items() if int(v) == max_synset_count]
-    # if(len(list_synsets_with_same_count) > 0):
-    #     # print("TIEEEE")
-    #     # print(list_synsets_with_same_count)
-        
-    #     wordCounts = defaultdict(int)       # dict keeps track of word count accross synsets
-    #     # Get lemmas that appear in these synsets
-    #     for s in list_synsets_with_same_count:
-    #         for l in s.lemmas():
-    #             # l = Lemma('boring.s.01.dull') 
-    #             word = str(l.name()).replace('_', ' ').lower()
-    #             # print(word, l.count())
-    #             if(str(word) != str(lemma)):
-    #                 wordCounts[word] += l.count()
-
-    #     # print(wordCounts)
-    #     if(len(wordCounts) == 0):
-    #         selected_word = wn_frequency_predictor(context)
-    #         # print(selected_word)
-    #         return selected_word
-    #     else:
-    #         selected_word = max(wordCounts, key=wordCounts.get)
-    #         # print(selected_word)
-    #         return selected_word
-        
-    # # Clear winner
-    # wordCounts = defaultdict(int)
-    # for l in max_synset.lemmas():
-    #     # l = Lemma('boring.s.01.dull') 
-    #     word = str(l.name()).replace('_', ' ').lower()
-    #     # print(word, l.count())
-    #     if(str(word) != str(lemma)):
-    #         wordCounts[word] += l.count()
-    
-    # if(len(wordCounts) > 0):
-    #     selected_word = max(wordCounts, key=wordCounts.get)
-    #     return selected_word
-    # else:
-    #     return #TODO - return second best synset
-    # # print(selected_word)
-    # return selected_word #replace for part 3        
-   
 class Word2VecSubst(object):
         
     def __init__(self, filename):
         self.model = gensim.models.KeyedVectors.load_word2vec_format(filename, binary=True)    
 
     def predict_nearest(self,context : Context) -> str:
-        return None # replace for part 4
+        # Get list of synomyms
+        lemma = context.lemma
+        pos = context.pos
+        synonyms_syn = set()
+        synonyms_wn = wn.synonyms(lemma)
+        # Get all synsets lemma appears in
+        synsets = wn.synsets(lemma, pos)
+        word_similarities = {}
+        # Get lemmas that appear in these synsets
+        for s in synsets:
+            for l in s.lemmas():
+                # l = Lemma('boring.s.01.dull') 
+                word = str(l.name()).replace('_', ' ').lower()
+                if(str(word) != str(lemma)):
+                    synonyms_syn.add(word)
+                    # compute cosile similarities btwn lemma and word
+                    try:
+                        word_similarities[word] = self.model.similarity(l.name(), word)
+                    except:
+                        continue
+        # print(synonyms_syn)
+        # print(word_similarities)
+        # Select highest score
+        highest_similarity_word = max(word_similarities, key=word_similarities.get)
+        highest_similarity_value = max(word_similarities.values())
+        return highest_similarity_word # replace for part 4
 
 
 class BertPredictor(object):
@@ -249,15 +216,16 @@ if __name__=="__main__":
 
     # At submission time, this program should run your best predictor (part 6).
 
-    #W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
-    #predictor = Word2VecSubst(W2VMODEL_FILENAME)
-
+    W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
+    predictor = Word2VecSubst(W2VMODEL_FILENAME)
+    
     # get_candidates('spin', 'v')
 
     for context in read_lexsub_xml(sys.argv[1]):
         # print('\n')
-        # # print("Context")
+        # print("Context")
         # print(context)  # useful for debugging
-        prediction = wn_simple_lesk_predictor(context)
+        # prediction = wn_simple_lesk_predictor(context)
         # prediction = smurf_predictor(context)
+        prediction = predictor.predict_nearest(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
