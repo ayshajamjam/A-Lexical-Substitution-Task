@@ -44,5 +44,11 @@ These embeddings were trained using a modified skip-gram architecture on 100B wo
 
 
 ### Part 2
+
 - python lexsub_main.py lexsub_trial.xml  > smurf.predict
 - perl score.pl smurf.predict gold.trial
+
+### Part 3
+
+- python lexsub_main.py lexsub_trial.xml  > smurf2.predict
+- perl score.pl smurf2.predict gold.trial
