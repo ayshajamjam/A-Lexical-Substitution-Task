@@ -59,11 +59,11 @@ def wn_frequency_predictor(context : Context) -> str:
     # print(pos)
 
     # Get candidates
-    synsets = wn.synsets(lemma, pos)    # Get all synsets lemma appears in
+    lemmas = wn.lemmas(lemma, pos)    # Get all synsets lemma appears in
     wordCounts = defaultdict(int)       # dict keeps track of word count accross synsets
     # Get lemmas that appear in these synsets
-    for s in synsets:
-        for l in s.lemmas():
+    for lem in lemmas:
+        for l in lem.synset().lemmas():
             # l = Lemma('boring.s.01.dull') 
             word = str(l.name()).replace('_', ' ').lower()
             # print(word, l.count())
@@ -177,7 +177,6 @@ class Word2VecSubst(object):
         lemma = context.lemma
         pos = context.pos
         synonyms_syn = set()
-        synonyms_wn = wn.synonyms(lemma)
         # Get all synsets lemma appears in
         lemmas = wn.lemmas(lemma, pos)
         word_similarities = {}
@@ -225,7 +224,8 @@ if __name__=="__main__":
         # print('\n')
         # print("Context")
         # print(context)  # useful for debugging
-        prediction = wn_simple_lesk_predictor(context)
         # prediction = smurf_predictor(context)
-        # prediction = predictor.predict_nearest(context)
+        # prediction = wn_frequency_predictor(context)
+        # prediction = wn_simple_lesk_predictor(context)
+        prediction = predictor.predict_nearest(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
