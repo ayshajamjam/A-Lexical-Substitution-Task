@@ -155,14 +155,14 @@ def wn_simple_lesk_predictor(context : Context) -> str:
                 b = l.count()
             else:
                 c = l.count()
-                word_count[word] += 1000 * a + 10 * c
+                word_count[(l, word)] += 1000 * a + 10 * c
         for w in word_count.keys():
             word_count[w] += 100 * b
 
     # print(word_count)
     if(len(word_count) > 0):
         # print(max(word_count, key=word_count.get), ' ==> ', max(word_count.values()))
-        return max(word_count, key=word_count.get)
+        return max(word_count, key=word_count.get)[1]
     else:
         # print('NONE')
         return None
@@ -215,8 +215,8 @@ if __name__=="__main__":
 
     # At submission time, this program should run your best predictor (part 6).
 
-    W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
-    predictor = Word2VecSubst(W2VMODEL_FILENAME)
+    # W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
+    # predictor = Word2VecSubst(W2VMODEL_FILENAME)
     
     # get_candidates('spin', 'v')
 
@@ -226,6 +226,6 @@ if __name__=="__main__":
         # print(context)  # useful for debugging
         # prediction = smurf_predictor(context)
         # prediction = wn_frequency_predictor(context)
-        # prediction = wn_simple_lesk_predictor(context)
-        prediction = predictor.predict_nearest(context)
+        prediction = wn_simple_lesk_predictor(context)
+        # prediction = predictor.predict_nearest(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
