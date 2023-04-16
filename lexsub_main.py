@@ -189,7 +189,7 @@ class Word2VecSubst(object):
                     synonyms_syn.add(word)
                     # compute cosile similarities btwn lemma and word
                     try:
-                        word_similarities[word] = self.model.similarity(l.name(), word)
+                        word_similarities[word] = self.model.similarity(l.name(), lemma)
                     except:
                         continue
         # print(synonyms_syn)
@@ -215,8 +215,8 @@ if __name__=="__main__":
 
     # At submission time, this program should run your best predictor (part 6).
 
-    # W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
-    # predictor = Word2VecSubst(W2VMODEL_FILENAME)
+    W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
+    predictor = Word2VecSubst(W2VMODEL_FILENAME)
     
     # get_candidates('spin', 'v')
 
@@ -226,6 +226,6 @@ if __name__=="__main__":
         # print(context)  # useful for debugging
         # prediction = smurf_predictor(context)
         # prediction = wn_frequency_predictor(context)
-        prediction = wn_simple_lesk_predictor(context)
-        # prediction = predictor.predict_nearest(context)
+        # prediction = wn_simple_lesk_predictor(context)
+        prediction = predictor.predict_nearest(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
