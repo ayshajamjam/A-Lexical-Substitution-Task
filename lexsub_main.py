@@ -179,11 +179,11 @@ class Word2VecSubst(object):
         synonyms_syn = set()
         synonyms_wn = wn.synonyms(lemma)
         # Get all synsets lemma appears in
-        synsets = wn.synsets(lemma, pos)
+        lemmas = wn.lemmas(lemma, pos)
         word_similarities = {}
         # Get lemmas that appear in these synsets
-        for s in synsets:
-            for l in s.lemmas():
+        for lem in lemmas:
+            for l in lem.synset().lemmas():
                 # l = Lemma('boring.s.01.dull') 
                 word = str(l.name()).replace('_', ' ').lower()
                 if(str(word) != str(lemma)):
