@@ -155,7 +155,7 @@ def wn_simple_lesk_predictor(context : Context) -> str:
                 b = l.count()
             else:
                 c = l.count()
-                word_count[word] += 1000 * a + c
+                word_count[word] += 1000 * a + 10 * c
         for w in word_count.keys():
             word_count[w] += 100 * b
 
@@ -164,7 +164,7 @@ def wn_simple_lesk_predictor(context : Context) -> str:
         # print(max(word_count, key=word_count.get), ' ==> ', max(word_count.values()))
         return max(word_count, key=word_count.get)
     else:
-        print('NONE')
+        # print('NONE')
         return None
 
 class Word2VecSubst(object):
@@ -225,7 +225,7 @@ if __name__=="__main__":
         # print('\n')
         # print("Context")
         # print(context)  # useful for debugging
-        # prediction = wn_simple_lesk_predictor(context)
+        prediction = wn_simple_lesk_predictor(context)
         # prediction = smurf_predictor(context)
-        prediction = predictor.predict_nearest(context)
+        # prediction = predictor.predict_nearest(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
