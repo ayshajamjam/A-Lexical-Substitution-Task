@@ -207,25 +207,64 @@ class BertPredictor(object):
         self.model = transformers.TFDistilBertForMaskedLM.from_pretrained('distilbert-base-uncased')
 
     def predict(self, context : Context) -> str:
-        return None # replace for part 5
+        # print('\n')
+        # print(context)
 
-    
+        lemma = context.lemma
+        pos = context.pos
+
+        # Get candidate synonyms
+        candidates = get_candidates(lemma, pos)
+        # print(candidates)
+
+        # Convert information in context to masked input representation
+        # print(context.left_context + context.right_context)
+        masked_sentence = "{left} [MASK] {right}".format(left = " ".join(context.left_context), right=" ".join(context.right_context))
+        # print(masked_sentence)
+
+        input_toks = self.tokenizer.encode(masked_sentence)
+        input_toks_words = self.tokenizer.convert_ids_to_tokens(input_toks)
+        # print(input_toks_words)
+
+        # Get index of masked target word
+        index = 0
+        for i in range(len(input_toks_words)):
+            if input_toks_words[i] == '[MASK]':
+                index = i
+                break
+        # print(index)
+        # print(self.tokenizer.convert_ids_to_tokens(input_toks[index]))
+
+        input_mat = np.array(input_toks).reshape((1,-1))
+        outputs = self.model.predict(input_mat, verbose = None)
+        predictions = outputs[0]
+        best_words_ints = np.argsort(predictions[0][index])[::-1] # Sort in increasing order
+        best_words = self.tokenizer.convert_ids_to_tokens(best_words_ints)
+        # print(best_words)
+
+        # Check overlap between candidates from Word2Vec and Bert
+        for word in best_words:
+            if word in candidates:
+                return word
+
+        # No candidates --> return first word from BERT
+        return best_words[0]
 
 if __name__=="__main__":
 
     # At submission time, this program should run your best predictor (part 6).
 
     W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
-    predictor = Word2VecSubst(W2VMODEL_FILENAME)
-    
+    # predictor = Word2VecSubst(W2VMODEL_FILENAME)
+    predictor_bert = BertPredictor()
     # get_candidates('spin', 'v')
 
     for context in read_lexsub_xml(sys.argv[1]):
         # print('\n')
-        # print("Context")
         # print(context)  # useful for debugging
         # prediction = smurf_predictor(context)
         # prediction = wn_frequency_predictor(context)
         # prediction = wn_simple_lesk_predictor(context)
-        prediction = predictor.predict_nearest(context)
+        # prediction = predictor.predict_nearest(context)
+        prediction = predictor_bert.predict(context)
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
