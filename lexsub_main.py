@@ -22,6 +22,8 @@ import re
 
 import string
 
+from operator import itemgetter
+
 def tokenize(s):
     """
     a naive tokenizer that splits on punctuation and whitespaces.  
@@ -199,6 +201,8 @@ class Word2VecSubst(object):
         highest_similarity_value = max(word_similarities.values())
         return highest_similarity_word # replace for part 4
 
+    def my_predictor(self,context : Context) -> str:
+        pass
 
 class BertPredictor(object):
 
@@ -250,21 +254,88 @@ class BertPredictor(object):
         # No candidates --> return first word from BERT
         return best_words[0]
 
+def my_predictor(context : Context, Word2VecSubst, BertPredictor) -> str:
+    lemma = context.lemma
+    pos = context.pos
+
+    # Get candidate synonyms
+    candidates = set()
+    # print(candidates)
+    lemmas = wn.lemmas(lemma, pos)
+    word_similarities = {}
+    # Get lemmas that appear in these synsets
+    for lem in lemmas:
+        for l in lem.synset().lemmas():
+            # l = Lemma('boring.s.01.dull') 
+            word = str(l.name()).replace('_', ' ').lower()
+            if(str(word) != str(lemma)):
+                candidates.add(word)
+                # compute cosile similarities btwn lemma and word
+                try:
+                    word_similarities[word] = Word2VecSubst.model.similarity(l.name(), lemma)
+                except:
+                    continue
+
+    # print(word_similarities)
+    top_five = dict(sorted(word_similarities.items(), key = itemgetter(1), reverse = True)[:5])
+    # print(top_five)
+
+    highest_similarity_word = max(word_similarities, key=word_similarities.get)
+    highest_similarity_value = max(word_similarities.values())
+
+    ### BERT
+
+    # Convert information in context to masked input representation
+    # print(context.left_context + context.right_context)
+    masked_sentence = "{left} [MASK] {right}".format(left = " ".join(context.left_context), right=" ".join(context.right_context))
+    # print(masked_sentence)
+
+    input_toks = BertPredictor.tokenizer.encode(masked_sentence)
+    input_toks_words = BertPredictor.tokenizer.convert_ids_to_tokens(input_toks)
+    # print(input_toks_words)
+
+    # Get index of masked target word
+    index = 0
+    for i in range(len(input_toks_words)):
+        if input_toks_words[i] == '[MASK]':
+            index = i
+            break
+    # print(index)
+    # print(self.tokenizer.convert_ids_to_tokens(input_toks[index]))
+
+    input_mat = np.array(input_toks).reshape((1,-1))
+    outputs = BertPredictor.model.predict(input_mat, verbose = None)
+    predictions = outputs[0]
+    best_words_ints = np.argsort(predictions[0][index])[::-1] # Sort in increasing order
+    best_words = BertPredictor.tokenizer.convert_ids_to_tokens(best_words_ints)
+    # print(best_words)
+
+    # Check overlap between candidates from Word2Vec and Bert
+    bert_similarity = 0
+    for word in best_words:
+        if word in top_five:
+            bert_similarity = Word2VecSubst.model.similarity(word, lemma)
+            return word
+
+    # No candidates --> return first word from BERT
+    return best_words[0]
+
 if __name__=="__main__":
 
     # At submission time, this program should run your best predictor (part 6).
 
     W2VMODEL_FILENAME = 'GoogleNews-vectors-negative300.bin.gz'
-    # predictor = Word2VecSubst(W2VMODEL_FILENAME)
+    predictor = Word2VecSubst(W2VMODEL_FILENAME)
     predictor_bert = BertPredictor()
     # get_candidates('spin', 'v')
 
     for context in read_lexsub_xml(sys.argv[1]):
         # print('\n')
         # print(context)  # useful for debugging
-        # prediction = smurf_predictor(context)
-        # prediction = wn_frequency_predictor(context)
-        # prediction = wn_simple_lesk_predictor(context)
-        # prediction = predictor.predict_nearest(context)
-        prediction = predictor_bert.predict(context)
+        # prediction = smurf_predictor(context)             # part 1
+        # prediction = wn_frequency_predictor(context)      # part 2
+        # prediction = wn_simple_lesk_predictor(context)    # part 3
+        # prediction = predictor.predict_nearest(context)   # part 4
+        # prediction = predictor_bert.predict(context)  # part 5
+        prediction = my_predictor(context, predictor, predictor_bert)    # part 6
         print("{}.{} {} :: {}".format(context.lemma, context.pos, context.cid, prediction))
