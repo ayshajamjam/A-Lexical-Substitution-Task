@@ -310,7 +310,7 @@ def my_predictor(context : Context, Word2VecSubst, BertPredictor) -> str:
             return word
 
     # No candidates --> return first word from BERT
-    # return best_words[0]
+    return best_words[0]
 
 if __name__=="__main__":
 
