@@ -263,7 +263,6 @@ def my_predictor(context : Context, Word2VecSubst, BertPredictor) -> str:
     # Get lemmas that appear in these synsets
     for lem in lemmas:
         # Include hyponyms in synonyms candidates
-        # print(lem.synset().hyponyms())
         for hypo in lem.synset().hyponyms():
             for q in hypo.lemmas():
                 if(q.name() != str(lemma)):
@@ -275,18 +274,14 @@ def my_predictor(context : Context, Word2VecSubst, BertPredictor) -> str:
                 candidates.add(word)
                 wordCounts[word] += l.count()
 
+    # From all the hypernyms of each hyponym for each synset of our current word, select those with the highest counts
     top_k = dict(sorted(wordCounts.items(), key = itemgetter(1), reverse = True)[:10])
-    # print(top_k)
     wordCounts = dict(sorted(wordCounts.items(), key=lambda x:x[1], reverse=True))
-    # return max(wordCounts, key=wordCounts.get)
-    # print(wordCounts)
 
     masked_sentence = "{left} [MASK] {right}".format(left = " ".join(context.left_context), right=" ".join(context.right_context))
-    # print(masked_sentence)
 
     input_toks = BertPredictor.tokenizer.encode(masked_sentence)
     input_toks_words = BertPredictor.tokenizer.convert_ids_to_tokens(input_toks)
-    # print(input_toks_words)
 
     # Get index of masked target word
     index = 0
@@ -294,8 +289,6 @@ def my_predictor(context : Context, Word2VecSubst, BertPredictor) -> str:
         if input_toks_words[i] == '[MASK]':
             index = i
             break
-    # print(index)
-    # print(self.tokenizer.convert_ids_to_tokens(input_toks[index]))
 
     input_mat = np.array(input_toks).reshape((1,-1))
     outputs = BertPredictor.model.predict(input_mat, verbose = None)
