@@ -3,7 +3,7 @@
 ## Introduction
 
 **Background for Project:**
-![Task #10: English Lexical Substitution Task (SemEval 2007)
+[Task #10: English Lexical Substitution Task (SemEval 2007)
 ](http://nlp.cs.swarthmore.edu/semeval/tasks/task10/description.php)
 
 This project was completed for my NLP class (Professor Bauer) at Columbia University.
@@ -27,10 +27,10 @@ the substitute *small* would not fit, and instead possible substitutes include *
 1. python3 -m venv env
 2. source env/bin/activate
 3. pip install nltk
-4. $python
-5. >>>import nltk
-6. >>>nltk.download() (select wordnet and stopwords packages from the corpora tab)
-7. >>>from nltk.corpus import wordnet as wn
+4. python
+5. import nltk
+6. nltk.download() (select wordnet and stopwords packages from the corpora tab)
+7. from nltk.corpus import wordnet as wn
 4. pip install --upgrade gensim
 5. pip install transformers
 6. pip install tensorflow
@@ -88,8 +88,8 @@ Default method: substitute the word 'smurf' for all target words.
 
 **wn_frequency_predictor(context):** takes a context object as input and predicts the possible synonym with the highest total occurence frequency (according to WordNet).
 
-`python lexsub_main.py lexsub_trial.xml > 2.predict
-perl score.pl 2.predict gold.trial`
+`python lexsub_main.py lexsub_trial.xml > 2.predict`
+`perl score.pl 2.predict gold.trial`
 
 ![Result](images/2_result.png)
 
@@ -106,8 +106,8 @@ The main *problem* with the Lesk algorithm is that the definition and the contex
 - All examples for the synset.
 - The definition and all examples for all hypernyms of the synset.
 
-`python lexsub_main.py lexsub_trial.xml > 3.predict
-perl score.pl 3.predict gold.trial`
+`python lexsub_main.py lexsub_trial.xml > 3.predict`
+`perl score.pl 3.predict gold.trial`
 
 ![Result](images/3_result.png)
 
@@ -137,12 +137,12 @@ We can use BERT to rank the WordNet derived candidates. We combine WordNet's abi
 - Check overlap between candidates from Word2Vec and Bert. No overlap, then return the first word from BERT.
 - Select, from the set of wordnet derived candidate synonyms, the highest-scoring word in the target position (i.e. the position of the masked word). Return this word.
 
-`python lexsub_main.py lexsub_trial.xml > 5.predict
-perl score.pl 5.predict gold.trial`
+`python lexsub_main.py lexsub_trial.xml > 5.predict`
+`perl score.pl 5.predict gold.trial`
 
 ![Result](images/5_result.png)
 
 ### Part 6
 
-`python lexsub_main.py lexsub_trial.xml > 6.predict
-perl score.pl 6.predict gold.trial`
+`python lexsub_main.py lexsub_trial.xml > 6.predict`
+`perl score.pl 6.predict gold.trial`
